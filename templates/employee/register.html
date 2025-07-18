@@ -1,0 +1,820 @@
+{% extends "base.html" %}
+
+{% block title %}Register Employee - Facial Recognition Attendance System{% endblock %}
+
+{% block extra_css %}
+<style>
+    .registration-form {
+        max-width: 800px;
+        margin: 0 auto;
+    }
+    .form-section {
+        background: white;
+        border-radius: 10px;
+        padding: 2rem;
+        margin-bottom: 2rem;
+        box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+    }
+    .section-title {
+        color: #0d6efd;
+        border-bottom: 2px solid #e9ecef;
+        padding-bottom: 1rem;
+        margin-bottom: 2rem;
+    }
+    .camera-container {
+        position: relative;
+        width: 100%;
+        max-width: 640px;
+        margin: 0 auto;
+        border-radius: 10px;
+        overflow: hidden;
+    }
+    #video {
+        width: 100%;
+        height: 480px;
+        object-fit: cover;
+        background: #000;
+        /* Mirror mode for better user experience - flip horizontally */
+        transform: scaleX(-1);
+        -webkit-transform: scaleX(-1);
+        -moz-transform: scaleX(-1);
+    }
+    .camera-overlay {
+        position: absolute;
+        top: 50%;
+        left: 50%;
+        transform: translate(-50%, -50%);
+        width: 200px;
+        height: 200px;
+        border: 3px solid #28a745;
+        border-radius: 50%;
+        pointer-events: none;
+    }
+    .capture-preview {
+        width: 100px;
+        height: 100px;
+        object-fit: cover;
+        border-radius: 50%;
+        border: 3px solid #28a745;
+        margin: 5px;
+    }
+    .qr-preview {
+        max-width: 200px;
+        border: 2px solid #dee2e6;
+        border-radius: 8px;
+        padding: 10px;
+        background: white;
+    }
+    .progress-step {
+        display: flex;
+        align-items: center;
+        margin-bottom: 1rem;
+    }
+    .step-number {
+        width: 30px;
+        height: 30px;
+        border-radius: 50%;
+        background: #6c757d;
+        color: white;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        margin-right: 1rem;
+        font-weight: bold;
+    }
+    .step-number.active {
+        background: #0d6efd;
+    }
+    .step-number.completed {
+        background: #28a745;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="registration-form">
+    <!-- Progress Indicator -->
+    <div class="form-section">
+        <h2 class="section-title">
+            <i class="fas fa-user-plus me-2"></i>Employee Registration Progress
+        </h2>
+        <div id="progressSteps">
+            <div class="progress-step">
+                <div class="step-number active" id="step1">1</div>
+                <div>Personal Information</div>
+            </div>
+            <div class="progress-step">
+                <div class="step-number" id="step2">2</div>
+                <div>Face Registration</div>
+            </div>
+            <div class="progress-step">
+                <div class="step-number" id="step3">3</div>
+                <div>QR Code Generation</div>
+            </div>
+            <div class="progress-step">
+                <div class="step-number" id="step4">4</div>
+                <div>Registration Complete</div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Step 1: Personal Information -->
+    <div class="form-section" id="personalInfoSection">
+        <h3 class="section-title">
+            <i class="fas fa-user me-2"></i>Personal Information
+        </h3>
+        <form id="employeeForm">
+            <div class="row">
+                <div class="col-md-6 mb-3">
+                    <label for="employeeNumber" class="form-label">Employee Number *</label>
+                    <input type="text" class="form-control" id="employeeNumber" required>
+                    <div class="form-text">Unique identifier for the employee</div>
+                </div>
+                <div class="col-md-6 mb-3">
+                    <label for="firstName" class="form-label">First Name *</label>
+                    <input type="text" class="form-control" id="firstName" required>
+                </div>
+            </div>
+            
+            <div class="row">
+                <div class="col-md-6 mb-3">
+                    <label for="lastName" class="form-label">Last Name *</label>
+                    <input type="text" class="form-control" id="lastName" required>
+                </div>
+                <div class="col-md-6 mb-3">
+                    <label for="middleName" class="form-label">Middle Name</label>
+                    <input type="text" class="form-control" id="middleName">
+                </div>
+            </div>
+            
+            <div class="row">
+                <div class="col-md-6 mb-3">
+                    <label for="department" class="form-label">Department *</label>
+                    <select class="form-control" id="department" required>
+                        <option value="">Select Department</option>
+                        <option value="Human Resources">Human Resources</option>
+                        <option value="Information Technology">Information Technology</option>
+                        <option value="Finance">Finance</option>
+                        <option value="Marketing">Marketing</option>
+                        <option value="Operations">Operations</option>
+                        <option value="Sales">Sales</option>
+                        <option value="Administration">Administration</option>
+                        <option value="Other">Other</option>
+                    </select>
+                </div>
+                <div class="col-md-6 mb-3">
+                    <label for="position" class="form-label">Position *</label>
+                    <input type="text" class="form-control" id="position" required>
+                </div>
+            </div>
+            
+            <div class="row">
+                <div class="col-md-6 mb-3">
+                    <label for="contactNumber" class="form-label">Contact Number</label>
+                    <input type="tel" class="form-control" id="contactNumber">
+                </div>
+                <div class="col-md-6 mb-3">
+                    <label for="email" class="form-label">Email Address</label>
+                    <input type="email" class="form-control" id="email">
+                </div>
+            </div>
+            
+            <div class="d-flex justify-content-between">
+                <a href="/employee/list" class="btn btn-secondary">
+                    <i class="fas fa-arrow-left me-2"></i>Back to List
+                </a>
+                <button type="button" class="btn btn-primary" onclick="nextStep(2)">
+                    Next: Face Registration <i class="fas fa-arrow-right ms-2"></i>
+                </button>
+            </div>
+        </form>
+    </div>
+
+    <!-- Step 2: Face Registration -->
+    <div class="form-section d-none" id="faceRegistrationSection">
+        <h3 class="section-title">
+            <i class="fas fa-camera me-2"></i>Face Registration
+        </h3>
+        
+        <div class="row">
+            <div class="col-md-8">
+                <div class="camera-container">
+                    <video id="video" autoplay muted></video>
+                    <div class="camera-overlay"></div>
+                </div>
+                
+                <div class="d-flex justify-content-center mt-3">
+                    <button type="button" class="btn btn-success me-2" id="startCamera">
+                        <i class="fas fa-play me-2"></i>Start Camera
+                    </button>
+                    <button type="button" class="btn btn-primary me-2" id="captureButton" disabled>
+                        <i class="fas fa-camera me-2"></i>Capture Face
+                    </button>
+                    <button type="button" class="btn btn-secondary" id="stopCamera" disabled>
+                        <i class="fas fa-stop me-2"></i>Stop Camera
+                    </button>
+                </div>
+                
+                <div class="alert alert-warning mt-3">
+                    <i class="fas fa-exclamation-triangle me-2"></i>
+                    <strong>Photo Requirements:</strong>
+                    <ul class="mb-0 mt-2">
+                        <li><strong>Must capture exactly 10 photos</strong> for registration</li>
+                        <li>Position your face within the circle</li>
+                        <li>Look directly at the camera for each shot</li>
+                        <li>Ensure good lighting conditions</li>
+                        <li>Vary angles slightly (straight, left, right)</li>
+                        <li>Include different expressions if comfortable</li>
+                    </ul>
+                </div>
+            </div>
+            
+            <div class="col-md-4">
+                <h5>Captured Photos (<span id="captureCount">0</span>/10)</h5>
+                <div id="capturedImages" class="d-flex flex-wrap"></div>
+                
+                <div class="mt-4">
+                    <label for="imageUpload" class="form-label">Or Upload Photos</label>
+                    <input type="file" class="form-control" id="imageUpload" multiple accept="image/*">
+                    <div class="form-text">Upload clear photos of the employee's face</div>
+                </div>
+                
+                <div class="mt-4">
+                    <h6>Camera Settings</h6>
+                    <div class="mb-2">
+                        <label for="cameraSelect" class="form-label">Camera:</label>
+                        <select class="form-control" id="cameraSelect"></select>
+                    </div>
+                    <div class="mb-2">
+                        <label for="resolutionSelect" class="form-label">Resolution:</label>
+                        <select class="form-control" id="resolutionSelect">
+                            <option value="640x480">640x480</option>
+                            <option value="1280x720" selected>1280x720 (HD)</option>
+                            <option value="1920x1080">1920x1080 (Full HD)</option>
+                        </select>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <div class="d-flex justify-content-between mt-4">
+            <button type="button" class="btn btn-secondary" onclick="previousStep(1)">
+                <i class="fas fa-arrow-left me-2"></i>Previous
+            </button>
+            <button type="button" class="btn btn-primary" id="proceedToQR" onclick="nextStep(3)" disabled>
+                Next: Generate QR Code <i class="fas fa-arrow-right ms-2"></i>
+            </button>
+        </div>
+    </div>
+
+    <!-- Step 3: QR Code Generation -->
+    <div class="form-section d-none" id="qrCodeSection">
+        <h3 class="section-title">
+            <i class="fas fa-qrcode me-2"></i>QR Code Generation
+        </h3>
+        
+        <div class="row">
+            <div class="col-md-6">
+                <div class="text-center">
+                    <h5>Employee QR Code</h5>
+                    <div id="qrCodeDisplay" class="d-flex justify-content-center">
+                        <!-- QR Code will be generated here -->
+                    </div>
+                    <div class="mt-3">
+                        <button type="button" class="btn btn-success me-2" id="downloadQR">
+                            <i class="fas fa-download me-2"></i>Download QR Code
+                        </button>
+                        <button type="button" class="btn btn-primary" id="printQR">
+                            <i class="fas fa-print me-2"></i>Print QR Code
+                        </button>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="col-md-6">
+                <div class="alert alert-success">
+                    <h6><i class="fas fa-check-circle me-2"></i>QR Code Instructions</h6>
+                    <ul class="mb-0">
+                        <li>Print this QR code on a card or badge</li>
+                        <li>Employee should carry it for attendance</li>
+                        <li>QR code contains encrypted employee data</li>
+                        <li>Can be scanned with any QR scanner for verification</li>
+                    </ul>
+                </div>
+                
+                <div class="card">
+                    <div class="card-header">
+                        <h6><i class="fas fa-info-circle me-2"></i>Employee Summary</h6>
+                    </div>
+                    <div class="card-body">
+                        <p><strong>Employee #:</strong> <span id="summaryEmpNum"></span></p>
+                        <p><strong>Name:</strong> <span id="summaryName"></span></p>
+                        <p><strong>Department:</strong> <span id="summaryDept"></span></p>
+                        <p><strong>Position:</strong> <span id="summaryPos"></span></p>
+                        <p><strong>Face Photos:</strong> <span id="summaryPhotos"></span></p>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <div class="d-flex justify-content-between mt-4">
+            <button type="button" class="btn btn-secondary" onclick="previousStep(2)">
+                <i class="fas fa-arrow-left me-2"></i>Previous
+            </button>
+            <button type="button" class="btn btn-success" id="completeRegistration">
+                <i class="fas fa-check me-2"></i>Complete Registration
+            </button>
+        </div>
+    </div>
+
+    <!-- Step 4: Registration Complete -->
+    <div class="form-section d-none" id="completionSection">
+        <div class="text-center">
+            <h3 class="section-title text-success">
+                <i class="fas fa-check-circle me-2"></i>Registration Complete!
+            </h3>
+            
+            <div class="alert alert-success">
+                <h4>Employee Successfully Registered</h4>
+                <p class="mb-0">The employee has been added to the system and can now use the attendance system.</p>
+            </div>
+            
+            <div class="row mt-4">
+                <div class="col-md-4">
+                    <div class="card">
+                        <div class="card-body text-center">
+                            <i class="fas fa-user-check fa-3x text-primary mb-3"></i>
+                            <h5>Profile Created</h5>
+                            <p class="text-muted">Employee profile with all details</p>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-4">
+                    <div class="card">
+                        <div class="card-body text-center">
+                            <i class="fas fa-face-smile fa-3x text-success mb-3"></i>
+                            <h5>Face Registered</h5>
+                            <p class="text-muted">Face recognition profile active</p>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-4">
+                    <div class="card">
+                        <div class="card-body text-center">
+                            <i class="fas fa-qrcode fa-3x text-warning mb-3"></i>
+                            <h5>QR Code Ready</h5>
+                            <p class="text-muted">QR code generated and ready to use</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="mt-4">
+                <a href="/employee/register" class="btn btn-primary me-2">
+                    <i class="fas fa-plus me-2"></i>Register Another Employee
+                </a>
+                <a href="/employee/list" class="btn btn-success me-2">
+                    <i class="fas fa-list me-2"></i>View All Employees
+                </a>
+                <a href="/attendance/" class="btn btn-info">
+                    <i class="fas fa-clock me-2"></i>Go to Attendance
+                </a>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script src="https://cdn.jsdelivr.net/npm/qrcode-generator@1.4.4/qrcode.js"></script>
+<script>
+let currentStep = 1;
+let capturedImages = [];
+let employeeData = {};
+let stream = null;
+
+document.addEventListener('DOMContentLoaded', function() {
+    loadCameraOptions();
+    setupEventListeners();
+});
+
+function setupEventListeners() {
+    document.getElementById('startCamera').addEventListener('click', startCamera);
+    document.getElementById('stopCamera').addEventListener('click', stopCamera);
+    document.getElementById('captureButton').addEventListener('click', captureImage);
+    document.getElementById('imageUpload').addEventListener('change', handleFileUpload);
+    document.getElementById('completeRegistration').addEventListener('click', completeRegistration);
+    document.getElementById('downloadQR').addEventListener('click', downloadQRCode);
+    document.getElementById('printQR').addEventListener('click', printQRCode);
+}
+
+async function loadCameraOptions() {
+    try {
+        const devices = await navigator.mediaDevices.enumerateDevices();
+        const videoDevices = devices.filter(device => device.kind === 'videoinput');
+        
+        const cameraSelect = document.getElementById('cameraSelect');
+        cameraSelect.innerHTML = '';
+        
+        videoDevices.forEach((device, index) => {
+            const option = document.createElement('option');
+            option.value = device.deviceId;
+            option.text = device.label || `Camera ${index + 1}`;
+            cameraSelect.appendChild(option);
+        });
+    } catch (error) {
+        console.error('Error loading cameras:', error);
+        showStatus('Could not load camera options', 'warning');
+    }
+}
+
+async function startCamera() {
+    try {
+        const cameraSelect = document.getElementById('cameraSelect');
+        const resolutionSelect = document.getElementById('resolutionSelect');
+        const [width, height] = resolutionSelect.value.split('x').map(Number);
+        
+        const constraints = {
+            video: {
+                deviceId: cameraSelect.value ? { exact: cameraSelect.value } : undefined,
+                width: { ideal: width },
+                height: { ideal: height }
+            }
+        };
+        
+        stream = await navigator.mediaDevices.getUserMedia(constraints);
+        const video = document.getElementById('video');
+        video.srcObject = stream;
+        
+        document.getElementById('startCamera').disabled = true;
+        document.getElementById('stopCamera').disabled = false;
+        document.getElementById('captureButton').disabled = false;
+        
+        showStatus('Camera started successfully', 'success');
+    } catch (error) {
+        console.error('Error starting camera:', error);
+        showStatus('Could not start camera. Please check permissions.', 'danger');
+    }
+}
+
+function stopCamera() {
+    if (stream) {
+        stream.getTracks().forEach(track => track.stop());
+        stream = null;
+    }
+    
+    document.getElementById('startCamera').disabled = false;
+    document.getElementById('stopCamera').disabled = true;
+    document.getElementById('captureButton').disabled = true;
+    
+    showStatus('Camera stopped', 'info');
+}
+
+async function captureImage() {
+    const video = document.getElementById('video');
+    
+    // Check for face detection before capturing
+    try {
+        // Use utility function to capture from mirrored video with correct orientation
+        const imageData = captureImageFromVideo(video, 0.9);
+        const base64Data = imageData.split(',')[1];
+        
+        // Quick face detection test
+        const response = await fetch('/api/validate-face', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({
+                image: base64Data
+            })
+        });
+        
+        const result = await response.json();
+        
+        if (result.success && result.faces_detected > 0) {
+            addCapturedImage(imageData);
+            showStatus(`Face detected! Confidence: ${(result.best_confidence * 100).toFixed(1)}%`, 'success');
+        } else {
+            showStatus('No face detected. Please position your face in the center and try again.', 'warning');
+        }
+    } catch (error) {
+        // Fallback to capturing without validation
+        console.warn('Face validation failed, capturing anyway:', error);
+        const dataURL = captureImageFromVideo(video, 0.8);
+        addCapturedImage(dataURL);
+    }
+}
+
+function addCapturedImage(dataURL) {
+    if (capturedImages.length >= 10) {
+        showStatus('Maximum 10 photos allowed', 'warning');
+        return;
+    }
+    
+    capturedImages.push(dataURL);
+    updateCapturedImagesDisplay();
+    updateCaptureCount();
+    
+    if (capturedImages.length >= 10) {
+        document.getElementById('proceedToQR').disabled = false;
+        showStatus('Perfect! You have captured all 10 required photos. You can now proceed to the next step.', 'success');
+    } else if (capturedImages.length >= 1) {
+        showStatus(`Great! ${capturedImages.length}/10 photos captured. Keep capturing to reach the required 10 photos.`, 'info');
+    }
+}
+
+function updateCapturedImagesDisplay() {
+    const container = document.getElementById('capturedImages');
+    container.innerHTML = '';
+    
+    capturedImages.forEach((image, index) => {
+        const img = document.createElement('img');
+        img.src = image;
+        img.className = 'capture-preview';
+        img.title = `Photo ${index + 1}`;
+        
+        const wrapper = document.createElement('div');
+        wrapper.className = 'position-relative d-inline-block';
+        
+        const deleteBtn = document.createElement('button');
+        deleteBtn.className = 'btn btn-danger btn-sm position-absolute top-0 end-0';
+        deleteBtn.innerHTML = '<i class="fas fa-times"></i>';
+        deleteBtn.onclick = () => removeCapturedImage(index);
+        
+        wrapper.appendChild(img);
+        wrapper.appendChild(deleteBtn);
+        container.appendChild(wrapper);
+    });
+}
+
+function removeCapturedImage(index) {
+    capturedImages.splice(index, 1);
+    updateCapturedImagesDisplay();
+    updateCaptureCount();
+    
+    if (capturedImages.length < 10) {
+        document.getElementById('proceedToQR').disabled = true;
+    }
+}
+
+function updateCaptureCount() {
+    document.getElementById('captureCount').textContent = capturedImages.length;
+}
+
+function handleFileUpload(event) {
+    const files = Array.from(event.target.files);
+    
+    files.forEach(file => {
+        if (capturedImages.length >= 10) {
+            showStatus('Maximum 10 photos allowed', 'warning');
+            return;
+        }
+        
+        const reader = new FileReader();
+        reader.onload = function(e) {
+            addCapturedImage(e.target.result);
+        };
+        reader.readAsDataURL(file);
+    });
+}
+
+function nextStep(step) {
+    if (step === 2) {
+        // Validate personal information
+        if (!validatePersonalInfo()) {
+            return;
+        }
+        collectPersonalInfo();
+    } else if (step === 3) {
+        // Validate face registration
+        if (capturedImages.length < 10) {
+            showStatus(`Please capture exactly 10 photos for optimal recognition. Currently: ${capturedImages.length}/10`, 'warning');
+            return;
+        }
+        generateQRCode();
+    }
+    
+    showStep(step);
+}
+
+function previousStep(step) {
+    showStep(step);
+}
+
+function showStep(step) {
+    // Hide all sections
+    document.querySelectorAll('.form-section:not(:first-child)').forEach(section => {
+        section.classList.add('d-none');
+    });
+    
+    // Show current section
+    const sections = ['', 'personalInfoSection', 'faceRegistrationSection', 'qrCodeSection', 'completionSection'];
+    document.getElementById(sections[step]).classList.remove('d-none');
+    
+    // Update progress steps
+    document.querySelectorAll('.step-number').forEach((stepEl, index) => {
+        stepEl.classList.remove('active', 'completed');
+        if (index + 1 < step) {
+            stepEl.classList.add('completed');
+            stepEl.innerHTML = '<i class="fas fa-check"></i>';
+        } else if (index + 1 === step) {
+            stepEl.classList.add('active');
+            stepEl.innerHTML = index + 1;
+        } else {
+            stepEl.innerHTML = index + 1;
+        }
+    });
+    
+    currentStep = step;
+}
+
+function validatePersonalInfo() {
+    const required = ['employeeNumber', 'firstName', 'lastName', 'department', 'position'];
+    
+    for (const field of required) {
+        const element = document.getElementById(field);
+        if (!element.value.trim()) {
+            element.focus();
+            showStatus(`Please fill in ${field.replace(/([A-Z])/g, ' $1').toLowerCase()}`, 'warning');
+            return false;
+        }
+    }
+    
+    return true;
+}
+
+function collectPersonalInfo() {
+    employeeData = {
+        employee_number: document.getElementById('employeeNumber').value,
+        first_name: document.getElementById('firstName').value,
+        last_name: document.getElementById('lastName').value,
+        middle_name: document.getElementById('middleName').value,
+        department: document.getElementById('department').value,
+        position: document.getElementById('position').value,
+        contact_number: document.getElementById('contactNumber').value,
+        email: document.getElementById('email').value
+    };
+}
+
+async function generateQRCode() {
+    // Update summary
+    document.getElementById('summaryEmpNum').textContent = employeeData.employee_number;
+    document.getElementById('summaryName').textContent = `${employeeData.first_name} ${employeeData.last_name}`;
+    document.getElementById('summaryDept').textContent = employeeData.department;
+    document.getElementById('summaryPos').textContent = employeeData.position;
+    document.getElementById('summaryPhotos').textContent = `${capturedImages.length} photos`;
+    
+    const qrCodeDisplay = document.getElementById('qrCodeDisplay');
+    qrCodeDisplay.innerHTML = `
+        <div class="qr-preview">
+            <div class="text-center">
+                <div class="spinner-border text-primary" role="status">
+                    <span class="visually-hidden">Generating QR Code...</span>
+                </div>
+                <p class="mt-2 small">Generating QR Code...</p>
+            </div>
+        </div>
+    `;
+    
+    // Generate QR code data
+    const qrData = `EMP_${employeeData.employee_number}`;
+    
+    try {
+        // Use qrcode-generator library
+        const qr = qrcode(4, 'M');
+        qr.addData(qrData);
+        qr.make();
+        
+        const qrImg = qr.createImgTag(4, 8);
+        
+        qrCodeDisplay.innerHTML = `
+            <div class="qr-preview text-center">
+                ${qrImg}
+                <p class="mt-2 small">Employee: ${employeeData.employee_number}</p>
+            </div>
+        `;
+        
+    } catch (error) {
+        console.error('Error generating QR code:', error);
+        qrCodeDisplay.innerHTML = `
+            <div class="qr-preview text-center">
+                <div class="alert alert-warning">
+                    <i class="fas fa-exclamation-triangle"></i>
+                    <p class="mb-0">QR Code generation failed</p>
+                    <small>Employee: ${employeeData.employee_number}</small>
+                </div>
+            </div>
+        `;
+    }
+}
+
+async function completeRegistration() {
+    try {
+        showLoading();
+        
+        // First create the employee
+        const response = await fetch('/api/employees', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify(employeeData)
+        });
+        
+        if (response.ok) {
+            const result = await response.json();
+            const employeeId = result.data.id;
+            
+            // Now upload face images if any
+            if (capturedImages.length > 0) {
+                await uploadFaceImages(employeeId);
+            }
+            
+            showStep(4);
+            showStatus('Employee registered successfully!', 'success');
+        } else {
+            const error = await response.json();
+            throw new Error(error.error || 'Registration failed');
+        }
+    } catch (error) {
+        console.error('Registration error:', error);
+        showStatus(`Registration failed: ${error.message}`, 'danger');
+    } finally {
+        hideLoading();
+    }
+}
+
+async function uploadFaceImages(employeeId) {
+    try {
+        for (let i = 0; i < capturedImages.length; i++) {
+            const formData = new FormData();
+            const blob = dataURLToBlob(capturedImages[i]);
+            formData.append('face_image', blob, `face_${i}.jpg`);
+            
+            const response = await fetch(`/api/employees/${employeeId}/faces`, {
+                method: 'POST',
+                body: formData
+            });
+            
+            if (!response.ok) {
+                console.warn(`Failed to upload face image ${i + 1}`);
+            }
+        }
+    } catch (error) {
+        console.error('Error uploading face images:', error);
+        // Don't fail the registration if face upload fails
+    }
+}
+
+function dataURLToBlob(dataURL) {
+    const arr = dataURL.split(',');
+    const mime = arr[0].match(/:(.*?);/)[1];
+    const bstr = atob(arr[1]);
+    let n = bstr.length;
+    const u8arr = new Uint8Array(n);
+    while(n--) {
+        u8arr[n] = bstr.charCodeAt(n);
+    }
+    return new Blob([u8arr], {type: mime});
+}
+
+function downloadQRCode() {
+    const qrCodeImg = document.querySelector('#qrCodeDisplay img');
+    if (qrCodeImg) {
+        const link = document.createElement('a');
+        link.download = `QR_${employeeData.employee_number}.png`;
+        link.href = qrCodeImg.src;
+        link.click();
+        showStatus('QR code downloaded successfully', 'success');
+    } else {
+        showStatus('No QR code to download', 'warning');
+    }
+}
+
+function printQRCode() {
+    const qrCodeImg = document.querySelector('#qrCodeDisplay img');
+    if (qrCodeImg) {
+        const printWindow = window.open('', '_blank');
+        printWindow.document.write(`
+            <html>
+            <head><title>QR Code - ${employeeData.employee_number}</title></head>
+            <body style="text-align: center; font-family: Arial;">
+                <h2>Employee QR Code</h2>
+                <p><strong>Employee:</strong> ${employeeData.first_name} ${employeeData.last_name}</p>
+                <p><strong>Number:</strong> ${employeeData.employee_number}</p>
+                <p><strong>Department:</strong> ${employeeData.department}</p>
+                <img src="${qrCodeImg.src}" style="border: 2px solid #000; margin: 20px;">
+                <p><em>Please carry this QR code for attendance marking</em></p>
+            </body>
+            </html>
+        `);
+        printWindow.document.close();
+        printWindow.print();
+        showStatus('Print dialog opened', 'info');
+    } else {
+        showStatus('No QR code to print', 'warning');
+    }
+}
+</script>
+{% endblock %} 

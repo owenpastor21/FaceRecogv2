@@ -1,0 +1,349 @@
+{% extends "base.html" %}
+
+{% block title %}Admin Dashboard{% endblock %}
+
+{% block content %}
+<div class="row">
+    <div class="col-12">
+        <h2 class="mb-4">
+            <i class="fas fa-chart-bar me-2"></i>
+            Admin Dashboard
+        </h2>
+    </div>
+</div>
+
+<!-- Statistics Cards -->
+<div class="row mb-4">
+    <div class="col-md-3">
+        <div class="card bg-primary text-white">
+            <div class="card-body">
+                <div class="d-flex justify-content-between">
+                    <div>
+                        <h4 class="card-title">Total Employees</h4>
+                        <h2 id="totalEmployees">-</h2>
+                    </div>
+                    <div class="align-self-center">
+                        <i class="fas fa-users fa-2x"></i>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-md-3">
+        <div class="card bg-success text-white">
+            <div class="card-body">
+                <div class="d-flex justify-content-between">
+                    <div>
+                        <h4 class="card-title">Active Employees</h4>
+                        <h2 id="activeEmployees">-</h2>
+                    </div>
+                    <div class="align-self-center">
+                        <i class="fas fa-user-check fa-2x"></i>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-md-3">
+        <div class="card bg-info text-white">
+            <div class="card-body">
+                <div class="d-flex justify-content-between">
+                    <div>
+                        <h4 class="card-title">Today's Attendance</h4>
+                        <h2 id="todayAttendance">-</h2>
+                    </div>
+                    <div class="align-self-center">
+                        <i class="fas fa-clock fa-2x"></i>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-md-3">
+        <div class="card bg-warning text-white">
+            <div class="card-body">
+                <div class="d-flex justify-content-between">
+                    <div>
+                        <h4 class="card-title">Face Embeddings</h4>
+                        <h2 id="totalEmbeddings">-</h2>
+                    </div>
+                    <div class="align-self-center">
+                        <i class="fas fa-camera fa-2x"></i>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Quick Actions -->
+<div class="row mb-4">
+    <div class="col-12">
+        <div class="card">
+            <div class="card-header">
+                <h5 class="mb-0">
+                    <i class="fas fa-bolt me-2"></i>
+                    Quick Actions
+                </h5>
+            </div>
+            <div class="card-body">
+                <div class="row">
+                    <div class="col-md-3 mb-2">
+                        <a href="/employee/register" class="btn btn-primary w-100">
+                            <i class="fas fa-user-plus me-2"></i>Add Employee
+                        </a>
+                    </div>
+                    <div class="col-md-3 mb-2">
+                        <a href="/admin/dtr-generation" class="btn btn-success w-100">
+                            <i class="fas fa-file-pdf me-2"></i>Generate DTR
+                        </a>
+                    </div>
+                    <div class="col-md-3 mb-2">
+                        <a href="/admin/reports" class="btn btn-info w-100">
+                            <i class="fas fa-chart-line me-2"></i>View Reports
+                        </a>
+                    </div>
+                    <div class="col-md-3 mb-2">
+                        <a href="/admin/system-settings" class="btn btn-secondary w-100">
+                            <i class="fas fa-cog me-2"></i>System Settings
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Recent Activity and Department Stats -->
+<div class="row">
+    <div class="col-md-8">
+        <div class="card">
+            <div class="card-header">
+                <h5 class="mb-0">
+                    <i class="fas fa-history me-2"></i>
+                    Recent Attendance Activity
+                </h5>
+            </div>
+            <div class="card-body">
+                <div id="recentActivity">
+                    <div class="text-center">
+                        <div class="spinner-border text-primary" role="status">
+                            <span class="visually-hidden">Loading...</span>
+                        </div>
+                        <p class="mt-2">Loading recent activity...</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-md-4">
+        <div class="card">
+            <div class="card-header">
+                <h5 class="mb-0">
+                    <i class="fas fa-building me-2"></i>
+                    Department Distribution
+                </h5>
+            </div>
+            <div class="card-body">
+                <div id="departmentStats">
+                    <div class="text-center">
+                        <div class="spinner-border text-primary" role="status">
+                            <span class="visually-hidden">Loading...</span>
+                        </div>
+                        <p class="mt-2">Loading department stats...</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- System Status -->
+<div class="row mt-4">
+    <div class="col-12">
+        <div class="card">
+            <div class="card-header">
+                <h5 class="mb-0">
+                    <i class="fas fa-server me-2"></i>
+                    System Status
+                </h5>
+            </div>
+            <div class="card-body">
+                <div class="row">
+                    <div class="col-md-3">
+                        <div class="d-flex align-items-center">
+                            <div class="flex-shrink-0">
+                                <i class="fas fa-database fa-2x text-success"></i>
+                            </div>
+                            <div class="flex-grow-1 ms-3">
+                                <h6 class="mb-0">Database</h6>
+                                <small class="text-success">Connected</small>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-md-3">
+                        <div class="d-flex align-items-center">
+                            <div class="flex-shrink-0">
+                                <i class="fas fa-camera fa-2x text-success"></i>
+                            </div>
+                            <div class="flex-grow-1 ms-3">
+                                <h6 class="mb-0">Face Recognition</h6>
+                                <small class="text-success">Active</small>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-md-3">
+                        <div class="d-flex align-items-center">
+                            <div class="flex-shrink-0">
+                                <i class="fas fa-qrcode fa-2x text-success"></i>
+                            </div>
+                            <div class="flex-grow-1 ms-3">
+                                <h6 class="mb-0">QR Scanner</h6>
+                                <small class="text-success">Ready</small>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-md-3">
+                        <div class="d-flex align-items-center">
+                            <div class="flex-shrink-0">
+                                <i class="fas fa-clock fa-2x text-success"></i>
+                            </div>
+                            <div class="flex-grow-1 ms-3">
+                                <h6 class="mb-0">System Time</h6>
+                                <small id="systemTime">Loading...</small>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+// Initialize dashboard
+document.addEventListener('DOMContentLoaded', function() {
+    loadDashboardData();
+    updateSystemTime();
+    
+    // Update system time every second
+    setInterval(updateSystemTime, 1000);
+});
+
+async function loadDashboardData() {
+    try {
+        const response = await apiCall('/admin/api/dashboard-stats');
+        if (response.success) {
+            displayDashboardStats(response);
+        }
+    } catch (error) {
+        console.error('Error loading dashboard data:', error);
+    }
+}
+
+function displayDashboardStats(data) {
+    // Update statistics cards
+    document.getElementById('totalEmployees').textContent = data.stats.total_employees;
+    document.getElementById('activeEmployees').textContent = data.stats.active_employees;
+    document.getElementById('todayAttendance').textContent = data.stats.attendance_records_today;
+    document.getElementById('totalEmbeddings').textContent = data.stats.total_face_embeddings;
+    
+    // Display recent activity
+    displayRecentActivity(data.recent_attendances);
+    
+    // Display department stats
+    displayDepartmentStats(data.departments);
+}
+
+function displayRecentActivity(attendances) {
+    const container = document.getElementById('recentActivity');
+    
+    if (attendances.length === 0) {
+        container.innerHTML = `
+            <div class="text-center text-muted">
+                <i class="fas fa-inbox fa-2x mb-2"></i>
+                <p>No recent activity</p>
+            </div>
+        `;
+        return;
+    }
+    
+    let html = '<div class="list-group list-group-flush">';
+    
+    attendances.forEach(att => {
+        const time = new Date(att.timestamp).toLocaleTimeString();
+        const type = att.type === 'in' ? 'Time In' : 'Time Out';
+        const badgeClass = att.type === 'in' ? 'bg-success' : 'bg-danger';
+        const icon = att.type === 'in' ? 'fa-sign-in-alt' : 'fa-sign-out-alt';
+        
+        html += `
+            <div class="list-group-item d-flex justify-content-between align-items-center">
+                <div class="d-flex align-items-center">
+                    <i class="fas ${icon} me-3 text-${att.type === 'in' ? 'success' : 'danger'}"></i>
+                    <div>
+                        <strong>${att.employee_name}</strong>
+                        <br><small class="text-muted">${time}</small>
+                    </div>
+                </div>
+                <span class="badge ${badgeClass}">${type}</span>
+            </div>
+        `;
+    });
+    
+    html += '</div>';
+    container.innerHTML = html;
+}
+
+function displayDepartmentStats(departments) {
+    const container = document.getElementById('departmentStats');
+    
+    if (departments.length === 0) {
+        container.innerHTML = `
+            <div class="text-center text-muted">
+                <i class="fas fa-building fa-2x mb-2"></i>
+                <p>No department data</p>
+            </div>
+        `;
+        return;
+    }
+    
+    let html = '<div class="list-group list-group-flush">';
+    
+    departments.forEach(dept => {
+        const percentage = ((dept.count / departments.reduce((sum, d) => sum + d.count, 0)) * 100).toFixed(1);
+        
+        html += `
+            <div class="list-group-item d-flex justify-content-between align-items-center">
+                <div>
+                    <strong>${dept.department}</strong>
+                </div>
+                <div class="text-end">
+                    <span class="badge bg-primary">${dept.count}</span>
+                    <br><small class="text-muted">${percentage}%</small>
+                </div>
+            </div>
+        `;
+    });
+    
+    html += '</div>';
+    container.innerHTML = html;
+}
+
+function updateSystemTime() {
+    const now = new Date();
+    const timeString = now.toLocaleTimeString();
+    const dateString = now.toLocaleDateString();
+    
+    document.getElementById('systemTime').textContent = `${dateString} ${timeString}`;
+}
+
+// Auto-refresh dashboard every 30 seconds
+setInterval(loadDashboardData, 30000);
+</script>
+{% endblock %} 

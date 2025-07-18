@@ -1,0 +1,977 @@
+{% extends "base.html" %}
+
+{% block title %}Edit Employee - Facial Recognition Attendance System{% endblock %}
+
+{% block extra_css %}
+<style>
+    .edit-form {
+        max-width: 1000px;
+        margin: 0 auto;
+    }
+    .form-section {
+        background: white;
+        border-radius: 10px;
+        padding: 2rem;
+        margin-bottom: 2rem;
+        box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+    }
+    .section-title {
+        color: #0d6efd;
+        border-bottom: 2px solid #e9ecef;
+        padding-bottom: 1rem;
+        margin-bottom: 2rem;
+    }
+    .employee-photo {
+        width: 150px;
+        height: 150px;
+        border-radius: 50%;
+        object-fit: cover;
+        border: 4px solid #e9ecef;
+        margin-bottom: 1rem;
+    }
+    .face-embedding {
+        width: 80px;
+        height: 80px;
+        border-radius: 50%;
+        object-fit: cover;
+        border: 2px solid #28a745;
+        margin: 5px;
+        cursor: pointer;
+        transition: transform 0.3s ease;
+    }
+    .face-embedding:hover {
+        transform: scale(1.1);
+    }
+    .qr-code-display {
+        max-width: 200px;
+        border: 2px solid #dee2e6;
+        border-radius: 8px;
+        padding: 10px;
+        background: white;
+    }
+    .camera-container {
+        position: relative;
+        width: 100%;
+        max-width: 400px;
+        margin: 0 auto;
+        border-radius: 10px;
+        overflow: hidden;
+    }
+    #video {
+        width: 100%;
+        height: 300px;
+        object-fit: cover;
+        background: #000;
+        /* Mirror mode for better user experience - flip horizontally */
+        transform: scaleX(-1);
+        -webkit-transform: scaleX(-1);
+        -moz-transform: scaleX(-1);
+    }
+    .camera-overlay {
+        position: absolute;
+        top: 50%;
+        left: 50%;
+        transform: translate(-50%, -50%);
+        width: 150px;
+        height: 150px;
+        border: 3px solid #28a745;
+        border-radius: 50%;
+        pointer-events: none;
+    }
+    .status-badge {
+        font-size: 0.8rem;
+        padding: 0.25rem 0.5rem;
+    }
+    .attendance-summary {
+        background: #f8f9fa;
+        border-radius: 8px;
+        padding: 1rem;
+    }
+    .recent-activity {
+        max-height: 300px;
+        overflow-y: auto;
+    }
+    .activity-item {
+        display: flex;
+        align-items: center;
+        padding: 0.5rem 0;
+        border-bottom: 1px solid #e9ecef;
+    }
+    .activity-item:last-child {
+        border-bottom: none;
+    }
+    .activity-time {
+        font-size: 0.8rem;
+        color: #6c757d;
+        min-width: 80px;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="edit-form">
+    <!-- Header -->
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="d-flex justify-content-between align-items-center">
+                <div>
+                    <h2>
+                        <i class="fas fa-user-edit me-2"></i>Edit Employee
+                    </h2>
+                    <p class="text-muted">Update employee information and manage face profiles</p>
+                </div>
+                <div>
+                    <a href="/employee/list" class="btn btn-outline-secondary me-2">
+                        <i class="fas fa-arrow-left me-1"></i>Back to List
+                    </a>
+                    <button type="button" class="btn btn-danger" onclick="confirmDeleteEmployee()">
+                        <i class="fas fa-trash me-1"></i>Delete Employee
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Employee Overview -->
+    <div class="form-section">
+        <div class="row">
+            <div class="col-md-3 text-center">
+                <img id="employeePhoto" src="/static/img/default-avatar.png" 
+                     class="employee-photo" alt="Employee Photo">
+                <div class="mt-2">
+                    <span class="badge bg-success status-badge" id="employeeStatus">Active</span>
+                </div>
+                <div class="mt-2">
+                    <small class="text-muted">
+                        Member since: <span id="memberSince">-</span>
+                    </small>
+                </div>
+            </div>
+            <div class="col-md-6">
+                <h4 id="employeeName">Loading...</h4>
+                <p class="text-muted mb-2">
+                    <i class="fas fa-id-badge me-2"></i>
+                    Employee #<span id="employeeNumber">-</span>
+                </p>
+                <p class="text-muted mb-2">
+                    <i class="fas fa-building me-2"></i>
+                    <span id="employeeDepartment">-</span>
+                </p>
+                <p class="text-muted mb-2">
+                    <i class="fas fa-briefcase me-2"></i>
+                    <span id="employeePosition">-</span>
+                </p>
+                <p class="text-muted mb-2">
+                    <i class="fas fa-phone me-2"></i>
+                    <span id="employeePhone">-</span>
+                </p>
+                <p class="text-muted">
+                    <i class="fas fa-envelope me-2"></i>
+                    <span id="employeeEmail">-</span>
+                </p>
+            </div>
+            <div class="col-md-3">
+                <div class="attendance-summary">
+                    <h6>Attendance Summary</h6>
+                    <div class="d-flex justify-content-between">
+                        <span>This Month:</span>
+                        <span class="fw-bold" id="monthlyAttendance">-</span>
+                    </div>
+                    <div class="d-flex justify-content-between">
+                        <span>Avg. Hours:</span>
+                        <span class="fw-bold" id="avgHours">-</span>
+                    </div>
+                    <div class="d-flex justify-content-between">
+                        <span>Face Profiles:</span>
+                        <span class="fw-bold" id="faceProfileCount">-</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Personal Information -->
+    <div class="form-section">
+        <h3 class="section-title">
+            <i class="fas fa-user me-2"></i>Personal Information
+        </h3>
+        <form id="employeeEditForm">
+            <div class="row">
+                <div class="col-md-6 mb-3">
+                    <label for="editEmployeeNumber" class="form-label">Employee Number *</label>
+                    <input type="text" class="form-control" id="editEmployeeNumber" required>
+                </div>
+                <div class="col-md-6 mb-3">
+                    <label for="editFirstName" class="form-label">First Name *</label>
+                    <input type="text" class="form-control" id="editFirstName" required>
+                </div>
+            </div>
+            
+            <div class="row">
+                <div class="col-md-6 mb-3">
+                    <label for="editLastName" class="form-label">Last Name *</label>
+                    <input type="text" class="form-control" id="editLastName" required>
+                </div>
+                <div class="col-md-6 mb-3">
+                    <label for="editMiddleName" class="form-label">Middle Name</label>
+                    <input type="text" class="form-control" id="editMiddleName">
+                </div>
+            </div>
+            
+            <div class="row">
+                <div class="col-md-6 mb-3">
+                    <label for="editDepartment" class="form-label">Department *</label>
+                    <select class="form-control" id="editDepartment" required>
+                        <option value="">Select Department</option>
+                        <option value="Human Resources">Human Resources</option>
+                        <option value="Information Technology">Information Technology</option>
+                        <option value="Finance">Finance</option>
+                        <option value="Marketing">Marketing</option>
+                        <option value="Operations">Operations</option>
+                        <option value="Sales">Sales</option>
+                        <option value="Administration">Administration</option>
+                        <option value="Other">Other</option>
+                    </select>
+                </div>
+                <div class="col-md-6 mb-3">
+                    <label for="editPosition" class="form-label">Position *</label>
+                    <input type="text" class="form-control" id="editPosition" required>
+                </div>
+            </div>
+            
+            <div class="row">
+                <div class="col-md-6 mb-3">
+                    <label for="editContactNumber" class="form-label">Contact Number</label>
+                    <input type="tel" class="form-control" id="editContactNumber">
+                </div>
+                <div class="col-md-6 mb-3">
+                    <label for="editEmail" class="form-label">Email Address</label>
+                    <input type="email" class="form-control" id="editEmail">
+                </div>
+            </div>
+            
+            <div class="row">
+                <div class="col-md-6 mb-3">
+                    <label for="editStatus" class="form-label">Status</label>
+                    <select class="form-control" id="editStatus">
+                        <option value="true">Active</option>
+                        <option value="false">Inactive</option>
+                    </select>
+                </div>
+            </div>
+            
+            <div class="text-end">
+                <button type="button" class="btn btn-primary" onclick="saveEmployeeInfo()">
+                    <i class="fas fa-save me-2"></i>Save Changes
+                </button>
+            </div>
+        </form>
+    </div>
+
+    <!-- Face Recognition Management -->
+    <div class="form-section">
+        <h3 class="section-title">
+            <i class="fas fa-face-smile me-2"></i>Face Recognition Management
+        </h3>
+        
+        <div class="row">
+            <div class="col-md-8">
+                <h5>Current Face Profiles (<span id="currentProfileCount">0</span>/50)</h5>
+                <div id="faceEmbeddings" class="d-flex flex-wrap mb-3">
+                    <!-- Face embeddings will be loaded here -->
+                </div>
+                
+                <div class="alert alert-info">
+                    <i class="fas fa-info-circle me-2"></i>
+                    <strong>Face Profile Management:</strong>
+                    <ul class="mb-0 mt-2">
+                        <li>Click on any face to view details or delete</li>
+                        <li>Add new faces using the camera or file upload</li>
+                        <li>More faces = better recognition accuracy</li>
+                        <li>Maximum 50 faces per employee</li>
+                    </ul>
+                </div>
+            </div>
+            
+            <div class="col-md-4">
+                <h5>Add New Face Profile</h5>
+                
+                <!-- Camera Capture -->
+                <div class="camera-container mb-3">
+                    <video id="video" autoplay muted style="display: none;"></video>
+                    <div class="camera-overlay" style="display: none;"></div>
+                    <div id="cameraPlaceholder" class="d-flex align-items-center justify-content-center bg-light" 
+                         style="height: 300px; border-radius: 10px;">
+                        <div class="text-center">
+                            <i class="fas fa-camera fa-3x text-muted mb-3"></i>
+                            <p class="text-muted">Camera not started</p>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="d-grid gap-2 mb-3">
+                    <button type="button" class="btn btn-success" id="startCameraBtn" onclick="startCamera()">
+                        <i class="fas fa-play me-2"></i>Start Camera
+                    </button>
+                    <button type="button" class="btn btn-primary" id="captureFaceBtn" onclick="captureFace()" disabled>
+                        <i class="fas fa-camera me-2"></i>Capture Face
+                    </button>
+                    <button type="button" class="btn btn-secondary" id="stopCameraBtn" onclick="stopCamera()" disabled>
+                        <i class="fas fa-stop me-2"></i>Stop Camera
+                    </button>
+                </div>
+                
+                <!-- File Upload -->
+                <div class="mb-3">
+                    <label for="faceFileUpload" class="form-label">Or Upload Image</label>
+                    <input type="file" class="form-control" id="faceFileUpload" 
+                           accept="image/*" multiple onchange="handleFaceFileUpload(event)">
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- QR Code Management -->
+    <div class="form-section">
+        <h3 class="section-title">
+            <i class="fas fa-qrcode me-2"></i>QR Code Management
+        </h3>
+        
+        <div class="row">
+            <div class="col-md-6">
+                <h5>Current QR Code</h5>
+                <div class="text-center">
+                    <div id="qrCodeDisplay" class="d-flex justify-content-center mb-3">
+                        <!-- QR Code will be displayed here -->
+                    </div>
+                    <div>
+                        <button type="button" class="btn btn-success me-2" onclick="downloadQRCode()">
+                            <i class="fas fa-download me-1"></i>Download
+                        </button>
+                        <button type="button" class="btn btn-primary me-2" onclick="printQRCode()">
+                            <i class="fas fa-print me-1"></i>Print
+                        </button>
+                        <button type="button" class="btn btn-warning" onclick="regenerateQRCode()">
+                            <i class="fas fa-sync me-1"></i>Regenerate
+                        </button>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="col-md-6">
+                <h5>QR Code Information</h5>
+                <div class="card">
+                    <div class="card-body">
+                        <p><strong>Employee ID:</strong> <span id="qrEmployeeId">-</span></p>
+                        <p><strong>Generated:</strong> <span id="qrGeneratedDate">-</span></p>
+                        <p><strong>Format:</strong> EMP_<span id="qrEmployeeNumber">-</span></p>
+                        <p class="mb-0"><strong>Status:</strong> 
+                            <span class="badge bg-success">Active</span>
+                        </p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Recent Activity -->
+    <div class="form-section">
+        <h3 class="section-title">
+            <i class="fas fa-history me-2"></i>Recent Activity
+        </h3>
+        
+        <div class="recent-activity" id="recentActivity">
+            <!-- Recent activity will be loaded here -->
+        </div>
+        
+        <div class="text-center mt-3">
+            <a href="/admin/dtr?employee_id={{ employee_id }}" class="btn btn-outline-primary">
+                <i class="fas fa-calendar-alt me-2"></i>View Full Attendance History
+            </a>
+        </div>
+    </div>
+</div>
+
+<!-- Face Detail Modal -->
+<div class="modal fade" id="faceDetailModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">
+                    <i class="fas fa-face-smile me-2"></i>Face Profile Details
+                </h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body" id="faceDetailContent">
+                <!-- Face details will be loaded here -->
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+                <button type="button" class="btn btn-danger" id="deleteFaceBtn">
+                    <i class="fas fa-trash me-1"></i>Delete Face
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script src="https://cdn.jsdelivr.net/npm/qrcode@1.5.3/build/qrcode.min.js"></script>
+<script>
+let employeeId = null;
+let stream = null;
+let currentFaceId = null;
+
+document.addEventListener('DOMContentLoaded', function() {
+    // Get employee ID from URL
+    const pathParts = window.location.pathname.split('/');
+    employeeId = pathParts[pathParts.length - 1];
+    
+    if (employeeId) {
+        loadEmployeeData();
+    } else {
+        showStatus('Invalid employee ID', 'danger');
+        window.location.href = '/employee/list';
+    }
+});
+
+async function loadEmployeeData() {
+    try {
+        showLoading();
+        
+        const response = await fetch(`/api/employees/${employeeId}`);
+        if (response.ok) {
+            const employee = await response.json();
+            populateEmployeeData(employee);
+            await loadFaceEmbeddings();
+            await loadRecentActivity();
+        } else {
+            throw new Error('Employee not found');
+        }
+    } catch (error) {
+        console.error('Error loading employee data:', error);
+        showStatus('Failed to load employee data', 'danger');
+    } finally {
+        hideLoading();
+    }
+}
+
+function populateEmployeeData(employee) {
+    // Overview section
+    document.getElementById('employeeName').textContent = employee.full_name;
+    document.getElementById('employeeNumber').textContent = employee.employee_number;
+    document.getElementById('employeeDepartment').textContent = employee.department;
+    document.getElementById('employeePosition').textContent = employee.position;
+    document.getElementById('employeePhone').textContent = employee.contact_number || 'N/A';
+    document.getElementById('employeeEmail').textContent = employee.email || 'N/A';
+    document.getElementById('memberSince').textContent = formatDate(employee.created_at);
+    
+    // Status
+    const statusBadge = document.getElementById('employeeStatus');
+    statusBadge.textContent = employee.is_active ? 'Active' : 'Inactive';
+    statusBadge.className = `badge status-badge ${employee.is_active ? 'bg-success' : 'bg-danger'}`;
+    
+    // Form fields
+    document.getElementById('editEmployeeNumber').value = employee.employee_number;
+    document.getElementById('editFirstName').value = employee.first_name;
+    document.getElementById('editLastName').value = employee.last_name;
+    document.getElementById('editMiddleName').value = employee.middle_name || '';
+    document.getElementById('editDepartment').value = employee.department;
+    document.getElementById('editPosition').value = employee.position;
+    document.getElementById('editContactNumber').value = employee.contact_number || '';
+    document.getElementById('editEmail').value = employee.email || '';
+    document.getElementById('editStatus').value = employee.is_active.toString();
+    
+    // Attendance summary
+    document.getElementById('monthlyAttendance').textContent = employee.monthly_attendance || '0';
+    document.getElementById('avgHours').textContent = employee.avg_hours || '0.0';
+    document.getElementById('faceProfileCount').textContent = employee.face_embedding_count || '0';
+    
+    // QR Code
+    generateQRCodeDisplay(employee.employee_number);
+    document.getElementById('qrEmployeeId').textContent = employee.id;
+    document.getElementById('qrEmployeeNumber').textContent = employee.employee_number;
+    document.getElementById('qrGeneratedDate').textContent = formatDate(employee.created_at);
+}
+
+async function loadFaceEmbeddings() {
+    try {
+        const response = await fetch(`/api/employees/${employeeId}/embeddings`);
+        if (response.ok) {
+            const embeddings = await response.json();
+            displayFaceEmbeddings(embeddings);
+        }
+    } catch (error) {
+        console.error('Error loading face embeddings:', error);
+    }
+}
+
+function displayFaceEmbeddings(embeddings) {
+    const container = document.getElementById('faceEmbeddings');
+    container.innerHTML = '';
+    
+    document.getElementById('currentProfileCount').textContent = embeddings.length;
+    
+    embeddings.forEach(embedding => {
+        const img = document.createElement('img');
+        img.src = embedding.source_image_url || '/static/img/face-placeholder.png';
+        img.className = 'face-embedding';
+        img.title = `Face ${embedding.id} - Confidence: ${embedding.face_confidence || 'N/A'}`;
+        img.onclick = () => viewFaceDetail(embedding.id);
+        container.appendChild(img);
+    });
+    
+    if (embeddings.length === 0) {
+        container.innerHTML = `
+            <div class="text-center text-muted w-100">
+                <i class="fas fa-face-frown fa-3x mb-3"></i>
+                <p>No face profiles found. Add some faces to improve recognition accuracy.</p>
+            </div>
+        `;
+    }
+}
+
+async function loadRecentActivity() {
+    try {
+        const response = await fetch(`/api/employees/${employeeId}/activity?limit=10`);
+        if (response.ok) {
+            const activities = await response.json();
+            displayRecentActivity(activities);
+        }
+    } catch (error) {
+        console.error('Error loading recent activity:', error);
+    }
+}
+
+function displayRecentActivity(activities) {
+    const container = document.getElementById('recentActivity');
+    container.innerHTML = '';
+    
+    if (activities.length === 0) {
+        container.innerHTML = `
+            <div class="text-center text-muted">
+                <i class="fas fa-calendar-times fa-2x mb-2"></i>
+                <p>No recent activity found</p>
+            </div>
+        `;
+        return;
+    }
+    
+    activities.forEach(activity => {
+        const item = document.createElement('div');
+        item.className = 'activity-item';
+        item.innerHTML = `
+            <div class="activity-time">${formatTime(activity.timestamp)}</div>
+            <div class="flex-grow-1 ms-3">
+                <div class="fw-bold">${activity.type === 'in' ? 'Time In' : 'Time Out'}</div>
+                <small class="text-muted">
+                    Similarity: ${activity.face_similarity_score?.toFixed(2) || 'N/A'} | 
+                    ${activity.verification_method}
+                </small>
+            </div>
+            <div>
+                <span class="badge ${activity.type === 'in' ? 'bg-success' : 'bg-danger'}">
+                    ${activity.type.toUpperCase()}
+                </span>
+            </div>
+        `;
+        container.appendChild(item);
+    });
+}
+
+async function saveEmployeeInfo() {
+    try {
+        showLoading();
+        
+        const formData = {
+            employee_number: document.getElementById('editEmployeeNumber').value,
+            first_name: document.getElementById('editFirstName').value,
+            last_name: document.getElementById('editLastName').value,
+            middle_name: document.getElementById('editMiddleName').value,
+            department: document.getElementById('editDepartment').value,
+            position: document.getElementById('editPosition').value,
+            contact_number: document.getElementById('editContactNumber').value,
+            email: document.getElementById('editEmail').value,
+            is_active: document.getElementById('editStatus').value === 'true'
+        };
+        
+        const response = await fetch(`/api/employees/${employeeId}`, {
+            method: 'PUT',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify(formData)
+        });
+        
+        if (response.ok) {
+            showStatus('Employee information updated successfully', 'success');
+            await loadEmployeeData(); // Refresh data
+        } else {
+            const error = await response.json();
+            throw new Error(error.error || 'Failed to update employee');
+        }
+    } catch (error) {
+        console.error('Error saving employee info:', error);
+        showStatus(`Failed to save: ${error.message}`, 'danger');
+    } finally {
+        hideLoading();
+    }
+}
+
+async function startCamera() {
+    try {
+        stream = await navigator.mediaDevices.getUserMedia({ video: true });
+        const video = document.getElementById('video');
+        video.srcObject = stream;
+        video.style.display = 'block';
+        document.getElementById('cameraPlaceholder').style.display = 'none';
+        document.querySelector('.camera-overlay').style.display = 'block';
+        
+        document.getElementById('startCameraBtn').disabled = true;
+        document.getElementById('captureFaceBtn').disabled = false;
+        document.getElementById('stopCameraBtn').disabled = false;
+        
+        showStatus('Camera started successfully', 'success');
+    } catch (error) {
+        console.error('Error starting camera:', error);
+        showStatus('Could not start camera. Please check permissions.', 'danger');
+    }
+}
+
+function stopCamera() {
+    if (stream) {
+        stream.getTracks().forEach(track => track.stop());
+        stream = null;
+    }
+    
+    const video = document.getElementById('video');
+    video.style.display = 'none';
+    document.getElementById('cameraPlaceholder').style.display = 'flex';
+    document.querySelector('.camera-overlay').style.display = 'none';
+    
+    document.getElementById('startCameraBtn').disabled = false;
+    document.getElementById('captureFaceBtn').disabled = true;
+    document.getElementById('stopCameraBtn').disabled = true;
+    
+    showStatus('Camera stopped', 'info');
+}
+
+async function captureFace() {
+    const video = document.getElementById('video');
+    
+    // Use utility function to capture from mirrored video with correct orientation
+    const dataURL = captureImageFromVideo(video, 0.8);
+    
+    // Convert to blob for upload
+    const response = await fetch(dataURL);
+    const blob = await response.blob();
+    
+    await uploadFaceImage(blob, 'camera_capture.jpg');
+}
+
+async function handleFaceFileUpload(event) {
+    const files = Array.from(event.target.files);
+    
+    for (const file of files) {
+        await uploadFaceImage(file, file.name);
+    }
+    
+    event.target.value = ''; // Reset input
+}
+
+async function uploadFaceImage(blob, filename) {
+    try {
+        showLoading();
+        
+        const formData = new FormData();
+        formData.append('face_image', blob, filename);
+        
+        const response = await fetch(`/api/employees/${employeeId}/faces`, {
+            method: 'POST',
+            body: formData
+        });
+        
+        if (response.ok) {
+            showStatus('Face profile added successfully', 'success');
+            await loadFaceEmbeddings(); // Refresh face embeddings
+        } else {
+            const error = await response.json();
+            throw new Error(error.error || 'Failed to add face profile');
+        }
+    } catch (error) {
+        console.error('Error uploading face image:', error);
+        showStatus(`Failed to add face: ${error.message}`, 'danger');
+    } finally {
+        hideLoading();
+    }
+}
+
+async function viewFaceDetail(faceId) {
+    try {
+        const response = await fetch(`/api/employees/${employeeId}/faces/${faceId}`);
+        if (response.ok) {
+            const face = await response.json();
+            displayFaceDetail(face);
+            
+            currentFaceId = faceId;
+            const modal = new bootstrap.Modal(document.getElementById('faceDetailModal'));
+            modal.show();
+        }
+    } catch (error) {
+        console.error('Error loading face detail:', error);
+        showStatus('Failed to load face details', 'danger');
+    }
+}
+
+function displayFaceDetail(face) {
+    const content = document.getElementById('faceDetailContent');
+    content.innerHTML = `
+        <div class="text-center mb-3">
+            <img src="${face.source_image_url || '/static/img/face-placeholder.png'}" 
+                 class="img-fluid" style="max-width: 200px; border-radius: 10px;" alt="Face Image">
+        </div>
+        <table class="table table-sm">
+            <tr><td><strong>Face ID:</strong></td><td>${face.id}</td></tr>
+            <tr><td><strong>Confidence:</strong></td><td>${face.face_confidence || 'N/A'}</td></tr>
+            <tr><td><strong>Quality Score:</strong></td><td>${face.face_quality_score || 'N/A'}</td></tr>
+            <tr><td><strong>Created:</strong></td><td>${formatDateTime(face.created_at)}</td></tr>
+            <tr><td><strong>From Attendance:</strong></td><td>${face.created_from_attendance ? 'Yes' : 'No'}</td></tr>
+        </table>
+    `;
+    
+    document.getElementById('deleteFaceBtn').onclick = () => deleteFaceProfile(face.id);
+}
+
+async function deleteFaceProfile(faceId) {
+    if (!confirm('Are you sure you want to delete this face profile?')) {
+        return;
+    }
+    
+    try {
+        showLoading();
+        
+        const response = await fetch(`/api/employees/${employeeId}/faces/${faceId}`, {
+            method: 'DELETE'
+        });
+        
+        if (response.ok) {
+            showStatus('Face profile deleted successfully', 'success');
+            bootstrap.Modal.getInstance(document.getElementById('faceDetailModal')).hide();
+            await loadFaceEmbeddings(); // Refresh face embeddings
+        } else {
+            throw new Error('Failed to delete face profile');
+        }
+    } catch (error) {
+        console.error('Error deleting face profile:', error);
+        showStatus('Failed to delete face profile', 'danger');
+    } finally {
+        hideLoading();
+    }
+}
+
+async function generateQRCodeDisplay(employeeNumber) {
+    const qrData = `EMP_${employeeNumber}`;
+    const qrCodeDisplay = document.getElementById('qrCodeDisplay');
+    
+    // Show loading state
+    qrCodeDisplay.innerHTML = `
+        <div class="qr-code-display text-center">
+            <div class="spinner-border text-primary" role="status">
+                <span class="visually-hidden">Loading QR Code...</span>
+            </div>
+            <p class="mt-2 small">Generating QR Code...</p>
+        </div>
+    `;
+    
+    try {
+        // First try to get QR code from API
+        const response = await fetch(`/api/employees/${employeeId}/qr-code`);
+        
+        if (response.ok) {
+            const result = await response.json();
+            if (result.success) {
+                // Display QR code from API
+                qrCodeDisplay.innerHTML = `
+                    <div class="qr-code-display text-center">
+                        <img src="data:image/png;base64,${result.data.qr_code_image}" 
+                             style="width: 180px; height: 180px; border: 2px solid #dee2e6;" 
+                             alt="QR Code">
+                        <p class="text-center mt-2 small">Employee: ${employeeNumber}</p>
+                    </div>
+                `;
+                return;
+            }
+        }
+        
+        // Fallback to client-side generation
+        const qrCodeDiv = document.createElement('div');
+        const qr = new QRCode(qrCodeDiv, {
+            text: qrData,
+            width: 180,
+            height: 180,
+            colorDark: "#000000",
+            colorLight: "#ffffff",
+            correctLevel: QRCode.CorrectLevel.M
+        });
+        
+        // Wait for QR code to generate
+        await new Promise(resolve => setTimeout(resolve, 100));
+        
+        qrCodeDisplay.innerHTML = `
+            <div class="qr-code-display text-center">
+                ${qrCodeDiv.innerHTML}
+                <p class="text-center mt-2 small">Employee: ${employeeNumber}</p>
+            </div>
+        `;
+        
+    } catch (error) {
+        console.error('Error generating QR code:', error);
+        qrCodeDisplay.innerHTML = `
+            <div class="qr-code-display text-center">
+                <div class="alert alert-warning">
+                    <i class="fas fa-exclamation-triangle"></i>
+                    <p class="mb-0">QR Code generation failed</p>
+                    <small>Employee: ${employeeNumber}</small>
+                </div>
+            </div>
+        `;
+    }
+}
+
+function downloadQRCode() {
+    const qrCodeDisplay = document.querySelector('#qrCodeDisplay canvas, #qrCodeDisplay img');
+    if (qrCodeDisplay) {
+        const link = document.createElement('a');
+        link.download = `QR_${document.getElementById('editEmployeeNumber').value}.png`;
+        
+        if (qrCodeDisplay.tagName === 'CANVAS') {
+            link.href = qrCodeDisplay.toDataURL();
+        } else {
+            link.href = qrCodeDisplay.src;
+        }
+        
+        link.click();
+        showStatus('QR code downloaded successfully', 'success');
+    } else {
+        showStatus('No QR code to download', 'warning');
+    }
+}
+
+function printQRCode() {
+    const qrCodeDisplay = document.querySelector('#qrCodeDisplay canvas, #qrCodeDisplay img');
+    if (qrCodeDisplay) {
+        const employeeNumber = document.getElementById('editEmployeeNumber').value;
+        const employeeName = `${document.getElementById('editFirstName').value} ${document.getElementById('editLastName').value}`;
+        
+        let qrImageSrc;
+        if (qrCodeDisplay.tagName === 'CANVAS') {
+            qrImageSrc = qrCodeDisplay.toDataURL();
+        } else {
+            qrImageSrc = qrCodeDisplay.src;
+        }
+        
+        const printWindow = window.open('', '_blank');
+        printWindow.document.write(`
+            <html>
+            <head><title>QR Code - ${employeeNumber}</title></head>
+            <body style="text-align: center; font-family: Arial;">
+                <h2>Employee QR Code</h2>
+                <p><strong>Employee:</strong> ${employeeName}</p>
+                <p><strong>Number:</strong> ${employeeNumber}</p>
+                <p><strong>Department:</strong> ${document.getElementById('editDepartment').value}</p>
+                <img src="${qrImageSrc}" style="border: 2px solid #000; margin: 20px;">
+                <p><em>Please carry this QR code for attendance marking</em></p>
+            </body>
+            </html>
+        `);
+        printWindow.document.close();
+        printWindow.print();
+        showStatus('Print dialog opened', 'info');
+    } else {
+        showStatus('No QR code to print', 'warning');
+    }
+}
+
+async function regenerateQRCode() {
+    if (!confirm('Are you sure you want to regenerate the QR code? The old QR code will become invalid.')) {
+        return;
+    }
+    
+    try {
+        showLoading();
+        
+        const response = await fetch(`/api/employees/${employeeId}/qr-code/regenerate`, {
+            method: 'POST'
+        });
+        
+        if (response.ok) {
+            const result = await response.json();
+            if (result.success) {
+                // Update QR code display with new QR code
+                const qrCodeDisplay = document.getElementById('qrCodeDisplay');
+                qrCodeDisplay.innerHTML = `
+                    <div class="qr-code-display text-center">
+                        <img src="data:image/png;base64,${result.data.qr_code_image}" 
+                             style="width: 180px; height: 180px; border: 2px solid #dee2e6;" 
+                             alt="QR Code">
+                        <p class="text-center mt-2 small">Employee: ${result.data.employee_number}</p>
+                    </div>
+                `;
+                
+                // Update QR code information
+                document.getElementById('qrEmployeeId').textContent = result.data.employee_id;
+                document.getElementById('qrEmployeeNumber').textContent = result.data.employee_number;
+                document.getElementById('qrGeneratedDate').textContent = formatDate(result.data.regenerated_at);
+                
+                showStatus('QR code regenerated successfully', 'success');
+            } else {
+                throw new Error(result.error || 'Failed to regenerate QR code');
+            }
+        } else {
+            const error = await response.json();
+            throw new Error(error.error || 'Failed to regenerate QR code');
+        }
+    } catch (error) {
+        console.error('Error regenerating QR code:', error);
+        showStatus(`Failed to regenerate QR code: ${error.message}`, 'danger');
+    } finally {
+        hideLoading();
+    }
+}
+
+function confirmDeleteEmployee() {
+    const employeeName = document.getElementById('employeeName').textContent;
+    
+    if (!confirm(`Are you sure you want to delete employee "${employeeName}"? This action cannot be undone and will remove all associated data including attendance records and face profiles.`)) {
+        return;
+    }
+    
+    deleteEmployee();
+}
+
+async function deleteEmployee() {
+    try {
+        showLoading();
+        
+        const response = await fetch(`/api/employees/${employeeId}`, {
+            method: 'DELETE'
+        });
+        
+        if (response.ok) {
+            showStatus('Employee deleted successfully', 'success');
+            setTimeout(() => {
+                window.location.href = '/employee/list';
+            }, 2000);
+        } else {
+            throw new Error('Failed to delete employee');
+        }
+    } catch (error) {
+        console.error('Error deleting employee:', error);
+        showStatus('Failed to delete employee', 'danger');
+    } finally {
+        hideLoading();
+    }
+}
+</script>
+{% endblock %} 

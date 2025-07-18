@@ -1,0 +1,808 @@
+{% extends "base.html" %}
+
+{% block title %}System Settings - Facial Recognition Attendance System{% endblock %}
+
+{% block extra_css %}
+<style>
+    .settings-section {
+        background: white;
+        border-radius: 15px;
+        padding: 2rem;
+        margin-bottom: 2rem;
+        box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+    }
+    .settings-header {
+        border-bottom: 2px solid #e9ecef;
+        padding-bottom: 1rem;
+        margin-bottom: 2rem;
+        color: #0d6efd;
+    }
+    .setting-item {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        padding: 1rem 0;
+        border-bottom: 1px solid #e9ecef;
+    }
+    .setting-item:last-child {
+        border-bottom: none;
+    }
+    .setting-info {
+        flex-grow: 1;
+        margin-right: 2rem;
+    }
+    .setting-control {
+        min-width: 200px;
+    }
+    .system-status {
+        background: linear-gradient(135deg, #28a745 0%, #20c997 100%);
+        color: white;
+        border-radius: 15px;
+        padding: 2rem;
+        margin-bottom: 2rem;
+        text-align: center;
+    }
+    .status-item {
+        margin: 1rem 0;
+    }
+    .toggle-switch {
+        position: relative;
+        display: inline-block;
+        width: 60px;
+        height: 34px;
+    }
+    .toggle-switch input {
+        opacity: 0;
+        width: 0;
+        height: 0;
+    }
+    .slider {
+        position: absolute;
+        cursor: pointer;
+        top: 0;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        background-color: #ccc;
+        transition: .4s;
+        border-radius: 34px;
+    }
+    .slider:before {
+        position: absolute;
+        content: "";
+        height: 26px;
+        width: 26px;
+        left: 4px;
+        bottom: 4px;
+        background-color: white;
+        transition: .4s;
+        border-radius: 50%;
+    }
+    input:checked + .slider {
+        background-color: #28a745;
+    }
+    input:checked + .slider:before {
+        transform: translateX(26px);
+    }
+    .danger-zone {
+        background: #fff5f5;
+        border: 2px solid #fed7d7;
+        border-radius: 10px;
+        padding: 2rem;
+    }
+    .security-badge {
+        background: linear-gradient(135deg, #dc3545 0%, #e83e8c 100%);
+        color: white;
+        padding: 0.5rem 1rem;
+        border-radius: 20px;
+        font-size: 0.8rem;
+        margin-left: 1rem;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="row mb-4">
+    <div class="col-12">
+        <h2>
+            <i class="fas fa-cog me-2"></i>System Settings
+        </h2>
+        <p class="text-muted">Configure and manage your facial recognition attendance system</p>
+    </div>
+</div>
+
+<!-- System Status -->
+<div class="system-status">
+    <div class="row">
+        <div class="col-md-3">
+            <div class="status-item">
+                <h3 id="systemUptime">99.9%</h3>
+                <p>System Uptime</p>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="status-item">
+                <h3 id="activeEmployees">0</h3>
+                <p>Active Employees</p>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="status-item">
+                <h3 id="todayAttendance">0</h3>
+                <p>Today's Records</p>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="status-item">
+                <h3 id="systemHealth">
+                    <i class="fas fa-heart text-light"></i>
+                </h3>
+                <p>System Health</p>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Face Recognition Settings -->
+<div class="settings-section">
+    <h4 class="settings-header">
+        <i class="fas fa-face-smile me-2"></i>Face Recognition Settings
+    </h4>
+    
+    <div class="setting-item">
+        <div class="setting-info">
+            <h6>Face Similarity Threshold</h6>
+            <p class="text-muted mb-0">Minimum similarity score required for face verification (0.0 - 1.0)</p>
+        </div>
+        <div class="setting-control">
+            <input type="range" class="form-range" id="faceThreshold" 
+                   min="0.5" max="1.0" step="0.01" value="0.85">
+            <div class="text-center mt-1">
+                <span id="faceThresholdValue">0.85</span>
+            </div>
+        </div>
+    </div>
+    
+    <div class="setting-item">
+        <div class="setting-info">
+            <h6>Maximum Face Embeddings per Employee</h6>
+            <p class="text-muted mb-0">Maximum number of face profiles stored per employee</p>
+        </div>
+        <div class="setting-control">
+            <input type="number" class="form-control" id="maxEmbeddings" 
+                   min="1" max="100" value="50">
+        </div>
+    </div>
+    
+    <div class="setting-item">
+        <div class="setting-info">
+            <h6>Auto-Update Face Profiles</h6>
+            <p class="text-muted mb-0">Automatically update face profiles with high-quality captures</p>
+        </div>
+        <div class="setting-control">
+            <label class="toggle-switch">
+                <input type="checkbox" id="autoUpdateFaces" checked>
+                <span class="slider"></span>
+            </label>
+        </div>
+    </div>
+    
+    <div class="setting-item">
+        <div class="setting-info">
+            <h6>Face Detection Confidence</h6>
+            <p class="text-muted mb-0">Minimum confidence for face detection (0.0 - 1.0)</p>
+        </div>
+        <div class="setting-control">
+            <input type="range" class="form-range" id="faceConfidence" 
+                   min="0.3" max="1.0" step="0.01" value="0.7">
+            <div class="text-center mt-1">
+                <span id="faceConfidenceValue">0.7</span>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Attendance Settings -->
+<div class="settings-section">
+    <h4 class="settings-header">
+        <i class="fas fa-clock me-2"></i>Attendance Settings
+    </h4>
+    
+    <div class="setting-item">
+        <div class="setting-info">
+            <h6>Working Hours</h6>
+            <p class="text-muted mb-0">Standard working hours for attendance calculation</p>
+        </div>
+        <div class="setting-control">
+            <div class="row">
+                <div class="col-6">
+                    <label class="form-label small">Start Time</label>
+                    <input type="time" class="form-control" id="workStartTime" value="08:00">
+                </div>
+                <div class="col-6">
+                    <label class="form-label small">End Time</label>
+                    <input type="time" class="form-control" id="workEndTime" value="17:00">
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <div class="setting-item">
+        <div class="setting-info">
+            <h6>Late Arrival Grace Period</h6>
+            <p class="text-muted mb-0">Grace period before marking as late (minutes)</p>
+        </div>
+        <div class="setting-control">
+            <input type="number" class="form-control" id="lateGracePeriod" 
+                   min="0" max="60" value="15">
+        </div>
+    </div>
+    
+    <div class="setting-item">
+        <div class="setting-info">
+            <h6>Require QR Code</h6>
+            <p class="text-muted mb-0">Require QR code scanning for attendance</p>
+        </div>
+        <div class="setting-control">
+            <label class="toggle-switch">
+                <input type="checkbox" id="requireQR" checked>
+                <span class="slider"></span>
+            </label>
+        </div>
+    </div>
+    
+    <div class="setting-item">
+        <div class="setting-info">
+            <h6>Allow Multiple Check-ins</h6>
+            <p class="text-muted mb-0">Allow multiple check-ins per day</p>
+        </div>
+        <div class="setting-control">
+            <label class="toggle-switch">
+                <input type="checkbox" id="allowMultipleCheckins">
+                <span class="slider"></span>
+            </label>
+        </div>
+    </div>
+</div>
+
+<!-- Security Settings -->
+<div class="settings-section">
+    <h4 class="settings-header">
+        <i class="fas fa-shield-alt me-2"></i>Security Settings
+        <span class="security-badge">CRITICAL</span>
+    </h4>
+    
+    <div class="setting-item">
+        <div class="setting-info">
+            <h6>Session Timeout</h6>
+            <p class="text-muted mb-0">Auto-logout time for inactive sessions (minutes)</p>
+        </div>
+        <div class="setting-control">
+            <select class="form-control" id="sessionTimeout">
+                <option value="15">15 minutes</option>
+                <option value="30" selected>30 minutes</option>
+                <option value="60">1 hour</option>
+                <option value="120">2 hours</option>
+                <option value="480">8 hours</option>
+            </select>
+        </div>
+    </div>
+    
+    <div class="setting-item">
+        <div class="setting-info">
+            <h6>Enable Audit Logging</h6>
+            <p class="text-muted mb-0">Log all system activities for security auditing</p>
+        </div>
+        <div class="setting-control">
+            <label class="toggle-switch">
+                <input type="checkbox" id="auditLogging" checked>
+                <span class="slider"></span>
+            </label>
+        </div>
+    </div>
+    
+    <div class="setting-item">
+        <div class="setting-info">
+            <h6>Data Encryption</h6>
+            <p class="text-muted mb-0">Encrypt face embeddings and sensitive data</p>
+        </div>
+        <div class="setting-control">
+            <label class="toggle-switch">
+                <input type="checkbox" id="dataEncryption" checked disabled>
+                <span class="slider"></span>
+            </label>
+            <small class="text-muted d-block mt-1">Always enabled for security</small>
+        </div>
+    </div>
+    
+    <div class="setting-item">
+        <div class="setting-info">
+            <h6>Failed Login Attempts</h6>
+            <p class="text-muted mb-0">Maximum failed login attempts before lockout</p>
+        </div>
+        <div class="setting-control">
+            <input type="number" class="form-control" id="maxFailedLogins" 
+                   min="3" max="10" value="5">
+        </div>
+    </div>
+</div>
+
+<!-- Camera Settings -->
+<div class="settings-section">
+    <h4 class="settings-header">
+        <i class="fas fa-camera me-2"></i>Camera Settings
+    </h4>
+    
+    <div class="setting-item">
+        <div class="setting-info">
+            <h6>Default Camera Resolution</h6>
+            <p class="text-muted mb-0">Default resolution for camera capture</p>
+        </div>
+        <div class="setting-control">
+            <select class="form-control" id="cameraResolution">
+                <option value="640x480">640x480 (VGA)</option>
+                <option value="1280x720" selected>1280x720 (HD)</option>
+                <option value="1920x1080">1920x1080 (Full HD)</option>
+            </select>
+        </div>
+    </div>
+    
+    <div class="setting-item">
+        <div class="setting-info">
+            <h6>Auto Camera Selection</h6>
+            <p class="text-muted mb-0">Automatically select the best available camera</p>
+        </div>
+        <div class="setting-control">
+            <label class="toggle-switch">
+                <input type="checkbox" id="autoCameraSelect" checked>
+                <span class="slider"></span>
+            </label>
+        </div>
+    </div>
+    
+    <div class="setting-item">
+        <div class="setting-info">
+            <h6>Face Capture Interval</h6>
+            <p class="text-muted mb-0">Interval between face captures during registration (seconds)</p>
+        </div>
+        <div class="setting-control">
+            <input type="number" class="form-control" id="captureInterval" 
+                   min="1" max="10" value="2">
+        </div>
+    </div>
+</div>
+
+<!-- System Maintenance -->
+<div class="settings-section">
+    <h4 class="settings-header">
+        <i class="fas fa-tools me-2"></i>System Maintenance
+    </h4>
+    
+    <div class="setting-item">
+        <div class="setting-info">
+            <h6>Auto Backup</h6>
+            <p class="text-muted mb-0">Automatically backup database and face data</p>
+        </div>
+        <div class="setting-control">
+            <div class="row">
+                <div class="col-8">
+                    <label class="toggle-switch">
+                        <input type="checkbox" id="autoBackup" checked>
+                        <span class="slider"></span>
+                    </label>
+                </div>
+                <div class="col-4">
+                    <select class="form-control form-control-sm" id="backupFrequency">
+                        <option value="daily" selected>Daily</option>
+                        <option value="weekly">Weekly</option>
+                        <option value="monthly">Monthly</option>
+                    </select>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <div class="setting-item">
+        <div class="setting-info">
+            <h6>Data Retention Period</h6>
+            <p class="text-muted mb-0">How long to keep attendance records (months)</p>
+        </div>
+        <div class="setting-control">
+            <select class="form-control" id="dataRetention">
+                <option value="12">12 months</option>
+                <option value="24" selected>24 months</option>
+                <option value="36">36 months</option>
+                <option value="60">5 years</option>
+                <option value="-1">Never delete</option>
+            </select>
+        </div>
+    </div>
+    
+    <div class="setting-item">
+        <div class="setting-info">
+            <h6>System Optimization</h6>
+            <p class="text-muted mb-0">Optimize database and clean temporary files</p>
+        </div>
+        <div class="setting-control">
+            <button type="button" class="btn btn-outline-primary" onclick="optimizeSystem()">
+                <i class="fas fa-rocket me-2"></i>Optimize Now
+            </button>
+        </div>
+    </div>
+</div>
+
+<!-- Danger Zone -->
+<div class="settings-section danger-zone">
+    <h4 class="text-danger mb-3">
+        <i class="fas fa-exclamation-triangle me-2"></i>Danger Zone
+    </h4>
+    
+    <div class="row">
+        <div class="col-md-6">
+            <div class="card border-warning">
+                <div class="card-body">
+                    <h6 class="card-title text-warning">
+                        <i class="fas fa-database me-2"></i>Reset Database
+                    </h6>
+                    <p class="card-text text-muted small">
+                        Remove all attendance records but keep employee data
+                    </p>
+                    <button type="button" class="btn btn-warning btn-sm" onclick="confirmResetDatabase()">
+                        Reset Records
+                    </button>
+                </div>
+            </div>
+        </div>
+        
+        <div class="col-md-6">
+            <div class="card border-danger">
+                <div class="card-body">
+                    <h6 class="card-title text-danger">
+                        <i class="fas fa-trash me-2"></i>Factory Reset
+                    </h6>
+                    <p class="card-text text-muted small">
+                        Delete ALL data and reset to default settings
+                    </p>
+                    <button type="button" class="btn btn-danger btn-sm" onclick="confirmFactoryReset()">
+                        Factory Reset
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Save Settings -->
+<div class="text-center">
+    <button type="button" class="btn btn-success btn-lg me-3" onclick="saveSettings()">
+        <i class="fas fa-save me-2"></i>Save All Settings
+    </button>
+    <button type="button" class="btn btn-secondary btn-lg" onclick="resetToDefaults()">
+        <i class="fas fa-undo me-2"></i>Reset to Defaults
+    </button>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    loadCurrentSettings();
+    setupEventListeners();
+    loadSystemStatus();
+});
+
+function setupEventListeners() {
+    // Range sliders
+    document.getElementById('faceThreshold').addEventListener('input', function() {
+        document.getElementById('faceThresholdValue').textContent = this.value;
+    });
+    
+    document.getElementById('faceConfidence').addEventListener('input', function() {
+        document.getElementById('faceConfidenceValue').textContent = this.value;
+    });
+}
+
+async function loadCurrentSettings() {
+    try {
+        const response = await fetch('/api/settings');
+        if (response.ok) {
+            const settings = await response.json();
+            populateSettings(settings);
+        }
+    } catch (error) {
+        console.error('Error loading settings:', error);
+        showStatus('Failed to load current settings', 'warning');
+    }
+}
+
+function populateSettings(settings) {
+    // Face Recognition Settings
+    document.getElementById('faceThreshold').value = settings.face_similarity_threshold || 0.85;
+    document.getElementById('faceThresholdValue').textContent = settings.face_similarity_threshold || 0.85;
+    document.getElementById('maxEmbeddings').value = settings.max_face_embeddings || 50;
+    document.getElementById('autoUpdateFaces').checked = settings.auto_update_faces !== false;
+    document.getElementById('faceConfidence').value = settings.face_detection_confidence || 0.7;
+    document.getElementById('faceConfidenceValue').textContent = settings.face_detection_confidence || 0.7;
+    
+    // Attendance Settings
+    document.getElementById('workStartTime').value = settings.work_start_time || '08:00';
+    document.getElementById('workEndTime').value = settings.work_end_time || '17:00';
+    document.getElementById('lateGracePeriod').value = settings.late_grace_period || 15;
+    document.getElementById('requireQR').checked = settings.require_qr_code !== false;
+    document.getElementById('allowMultipleCheckins').checked = settings.allow_multiple_checkins === true;
+    
+    // Security Settings
+    document.getElementById('sessionTimeout').value = settings.session_timeout || 30;
+    document.getElementById('auditLogging').checked = settings.audit_logging !== false;
+    document.getElementById('maxFailedLogins').value = settings.max_failed_logins || 5;
+    
+    // Camera Settings
+    document.getElementById('cameraResolution').value = settings.camera_resolution || '1280x720';
+    document.getElementById('autoCameraSelect').checked = settings.auto_camera_select !== false;
+    document.getElementById('captureInterval').value = settings.capture_interval || 2;
+    
+    // Maintenance Settings
+    document.getElementById('autoBackup').checked = settings.auto_backup !== false;
+    document.getElementById('backupFrequency').value = settings.backup_frequency || 'daily';
+    document.getElementById('dataRetention').value = settings.data_retention_months || 24;
+}
+
+async function loadSystemStatus() {
+    try {
+        const response = await fetch('/api/system/status');
+        if (response.ok) {
+            const status = await response.json();
+            updateSystemStatus(status);
+        }
+    } catch (error) {
+        console.error('Error loading system status:', error);
+    }
+}
+
+function updateSystemStatus(status) {
+    document.getElementById('systemUptime').textContent = `${status.uptime || '99.9'}%`;
+    document.getElementById('activeEmployees').textContent = status.active_employees || 0;
+    document.getElementById('todayAttendance').textContent = status.today_attendance || 0;
+    
+    const healthIcon = document.getElementById('systemHealth');
+    if (status.health === 'healthy') {
+        healthIcon.innerHTML = '<i class="fas fa-heart text-light"></i>';
+    } else {
+        healthIcon.innerHTML = '<i class="fas fa-heart-broken text-warning"></i>';
+    }
+}
+
+async function saveSettings() {
+    try {
+        showLoading();
+        
+        const settings = {
+            // Face Recognition
+            face_similarity_threshold: parseFloat(document.getElementById('faceThreshold').value),
+            max_face_embeddings: parseInt(document.getElementById('maxEmbeddings').value),
+            auto_update_faces: document.getElementById('autoUpdateFaces').checked,
+            face_detection_confidence: parseFloat(document.getElementById('faceConfidence').value),
+            
+            // Attendance
+            work_start_time: document.getElementById('workStartTime').value,
+            work_end_time: document.getElementById('workEndTime').value,
+            late_grace_period: parseInt(document.getElementById('lateGracePeriod').value),
+            require_qr_code: document.getElementById('requireQR').checked,
+            allow_multiple_checkins: document.getElementById('allowMultipleCheckins').checked,
+            
+            // Security
+            session_timeout: parseInt(document.getElementById('sessionTimeout').value),
+            audit_logging: document.getElementById('auditLogging').checked,
+            max_failed_logins: parseInt(document.getElementById('maxFailedLogins').value),
+            
+            // Camera
+            camera_resolution: document.getElementById('cameraResolution').value,
+            auto_camera_select: document.getElementById('autoCameraSelect').checked,
+            capture_interval: parseInt(document.getElementById('captureInterval').value),
+            
+            // Maintenance
+            auto_backup: document.getElementById('autoBackup').checked,
+            backup_frequency: document.getElementById('backupFrequency').value,
+            data_retention_months: parseInt(document.getElementById('dataRetention').value)
+        };
+        
+        const response = await fetch('/api/settings', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify(settings)
+        });
+        
+        if (response.ok) {
+            showStatus('Settings saved successfully!', 'success');
+        } else {
+            throw new Error('Failed to save settings');
+        }
+    } catch (error) {
+        console.error('Error saving settings:', error);
+        showStatus('Failed to save settings', 'danger');
+    } finally {
+        hideLoading();
+    }
+}
+
+async function resetToDefaults() {
+    if (!confirm('Are you sure you want to reset all settings to defaults? This action cannot be undone.')) {
+        return;
+    }
+    
+    try {
+        showLoading();
+        
+        const response = await fetch('/api/settings/reset', {
+            method: 'POST'
+        });
+        
+        if (response.ok) {
+            const defaultSettings = await response.json();
+            populateSettings(defaultSettings);
+            showStatus('Settings reset to defaults', 'success');
+        } else {
+            throw new Error('Failed to reset settings');
+        }
+    } catch (error) {
+        console.error('Error resetting settings:', error);
+        showStatus('Failed to reset settings', 'danger');
+    } finally {
+        hideLoading();
+    }
+}
+
+async function optimizeSystem() {
+    if (!confirm('This will optimize the database and clean temporary files. Continue?')) {
+        return;
+    }
+    
+    try {
+        showLoading();
+        
+        const response = await fetch('/api/system/optimize', {
+            method: 'POST'
+        });
+        
+        if (response.ok) {
+            const result = await response.json();
+            showStatus(`System optimized successfully! ${result.message}`, 'success');
+            loadSystemStatus(); // Refresh status
+        } else {
+            throw new Error('Failed to optimize system');
+        }
+    } catch (error) {
+        console.error('Error optimizing system:', error);
+        showStatus('Failed to optimize system', 'danger');
+    } finally {
+        hideLoading();
+    }
+}
+
+function confirmResetDatabase() {
+    const modal = `
+        <div class="modal fade" id="resetDatabaseModal" tabindex="-1">
+            <div class="modal-dialog">
+                <div class="modal-content">
+                    <div class="modal-header bg-warning text-white">
+                        <h5 class="modal-title">
+                            <i class="fas fa-exclamation-triangle me-2"></i>Reset Database
+                        </h5>
+                        <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+                    </div>
+                    <div class="modal-body">
+                        <p><strong>Warning:</strong> This will delete all attendance records but keep employee data and settings.</p>
+                        <p>Type <strong>RESET RECORDS</strong> to confirm:</p>
+                        <input type="text" class="form-control" id="resetConfirmText" placeholder="RESET RECORDS">
+                    </div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                        <button type="button" class="btn btn-warning" onclick="executeResetDatabase()">Reset Records</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    `;
+    
+    document.body.insertAdjacentHTML('beforeend', modal);
+    const modalElement = new bootstrap.Modal(document.getElementById('resetDatabaseModal'));
+    modalElement.show();
+}
+
+async function executeResetDatabase() {
+    const confirmText = document.getElementById('resetConfirmText').value;
+    if (confirmText !== 'RESET RECORDS') {
+        showStatus('Please type "RESET RECORDS" to confirm', 'warning');
+        return;
+    }
+    
+    try {
+        showLoading();
+        
+        const response = await fetch('/api/system/reset-records', {
+            method: 'POST'
+        });
+        
+        if (response.ok) {
+            showStatus('Database records reset successfully', 'success');
+            bootstrap.Modal.getInstance(document.getElementById('resetDatabaseModal')).hide();
+        } else {
+            throw new Error('Failed to reset database');
+        }
+    } catch (error) {
+        console.error('Error resetting database:', error);
+        showStatus('Failed to reset database', 'danger');
+    } finally {
+        hideLoading();
+    }
+}
+
+function confirmFactoryReset() {
+    const modal = `
+        <div class="modal fade" id="factoryResetModal" tabindex="-1">
+            <div class="modal-dialog">
+                <div class="modal-content">
+                    <div class="modal-header bg-danger text-white">
+                        <h5 class="modal-title">
+                            <i class="fas fa-exclamation-triangle me-2"></i>Factory Reset
+                        </h5>
+                        <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+                    </div>
+                    <div class="modal-body">
+                        <p><strong>DANGER:</strong> This will delete ALL data including:</p>
+                        <ul>
+                            <li>All employee records</li>
+                            <li>All attendance data</li>
+                            <li>All face embeddings</li>
+                            <li>All system settings</li>
+                        </ul>
+                        <p>Type <strong>FACTORY RESET</strong> to confirm:</p>
+                        <input type="text" class="form-control" id="factoryResetConfirmText" placeholder="FACTORY RESET">
+                    </div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                        <button type="button" class="btn btn-danger" onclick="executeFactoryReset()">Factory Reset</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    `;
+    
+    document.body.insertAdjacentHTML('beforeend', modal);
+    const modalElement = new bootstrap.Modal(document.getElementById('factoryResetModal'));
+    modalElement.show();
+}
+
+async function executeFactoryReset() {
+    const confirmText = document.getElementById('factoryResetConfirmText').value;
+    if (confirmText !== 'FACTORY RESET') {
+        showStatus('Please type "FACTORY RESET" to confirm', 'warning');
+        return;
+    }
+    
+    try {
+        showLoading();
+        
+        const response = await fetch('/api/system/factory-reset', {
+            method: 'POST'
+        });
+        
+        if (response.ok) {
+            showStatus('Factory reset completed. Redirecting...', 'success');
+            setTimeout(() => {
+                window.location.href = '/';
+            }, 3000);
+        } else {
+            throw new Error('Failed to perform factory reset');
+        }
+    } catch (error) {
+        console.error('Error performing factory reset:', error);
+        showStatus('Failed to perform factory reset', 'danger');
+    } finally {
+        hideLoading();
+    }
+}
+</script>
+{% endblock %} 
